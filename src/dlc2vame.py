@@ -1,27 +1,13 @@
-import math
-import yaml
 from pathlib import Path
 import warnings
+from typing import Tuple, List
+
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import cv2 as cv
-
-import vame
-
-from my_paths import vame_path
-visual_check = True
-
-def _read_config(cfg_path : Path = vame_path / "config.yaml") -> dict:
-    with open(cfg_path, 'r') as file:
-        cfg = yaml.safe_load(file)
-    return cfg
-
-def _write_config(cfg : dict, cfg_path : Path = vame_path / "config.yaml") -> None:
-    with open(cfg_path, 'w') as outfile:
-        yaml.dump(cfg, outfile, default_flow_style=False)
-    return None
+from vame.util.auxiliary import read_config, write_config
 
 def _validate_paths(df_source: Path, vid_source: Path, dest: Path):
     # chekc for valid data frame files
@@ -96,10 +82,9 @@ def _drop_empty_timepoints(df: pd.DataFrame, confidence:float, n_conf_labels=2):
     )
     df = df.iloc[start_idx:end_idx + 1, :]
 
-    if visual_check:
-        plt.plot(enough_body_parts)
-        plt.vlines([start_idx, end_idx + 1], ymin=0, ymax=1, color="red")
-        plt.show()
+    plt.plot(enough_body_parts)
+    plt.vlines([start_idx, end_idx + 1], ymin=0, ymax=1, color="red")
+    plt.show()
 
     return df, (start_idx, end_idx)
 
@@ -178,7 +163,7 @@ def _keep_comon_body_parts(comon_parts: set, vame_path: Path) -> None:
     return None
 
 
-def _remove_data(data_stems: list('str'), vame_path: Path) -> None:
+def _remove_data(data_stems: List['str'], vame_path: Path) -> None:
     for fstem in data_stems:
         if (vame_path / 'videos' / fstem).with_suffix(".mp4").exists():
             print(f"deleting {fstem} mp4 and h5 files")
@@ -222,18 +207,21 @@ def _plot_common_parts(vame_path: Path):
 
 
 def add_data_to_vame(df_source: Path, vid_source: Path, vame_path: Path,
-                     exclude: tuple('str') =()) -> None:
+                     exclude: Tuple['str']=(), reload: bool = False) -> None:
 
-    # ready paths and generatl config
+    # ready paths and generate config
     df_files, vid_files = _validate_paths(df_source, vid_source, vame_path)
-    cfg = _read_config()
+    cfg = read_config(vame_path / "config.yaml")
     pose_confidence = cfg['pose_confidence']
 
     # since we might need to limit VAME training to body parts present
     # on all pose estimations, keep a list of the present body parts of
     # each file for later further processing
 
-    old_data_body_parts = _get_dataset_bodyparts(vame_path)
+    if reload:
+        old_data_body_parts = dict()
+    else:
+        old_data_body_parts = _get_dataset_bodyparts(vame_path)
 
     # preprocess new files to add to the dataset and keeps track of their
     # comon body parts
@@ -246,8 +234,11 @@ def add_data_to_vame(df_source: Path, vid_source: Path, vame_path: Path,
         ).with_suffix('.h5')
 
         if df_dest_file.exists():
-            print(f"{datum_name}.h5 already transferred, skipping")
-            continue
+            if reload:
+                pass
+            else:
+                print(f"{datum_name}.h5 already transferred, skipping")
+                continue
         elif datum_name in exclude:
             print(f"{datum_name}.h5 excluded, skipping")
             continue
@@ -331,6 +322,6 @@ def add_data_to_vame(df_source: Path, vid_source: Path, vame_path: Path,
     print("adding data names to yaml file, this destroys the anotations in the file!")
     cfg['video_sets'] = list(data_body_parts.keys())
     cfg['num_features'] = int(len(ordere_bodyparts) * 2)
-    _ = _write_config(cfg)
+    _ = write_config(vame_path / "config.yaml", cfg)
 
     return None

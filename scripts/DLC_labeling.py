@@ -4,34 +4,43 @@ import matplotlib
 matplotlib.use('Agg')
 
 
-# 2023-06-22 first test with manually held camera, not super good
-videofolder = pl.Path("/home/mateo/code/beehaviour/data/test_videos")
-config_path = "/home/mateo/code/beehaviour/data/beehaviour-Mateo-2023-06-22/config.yaml"
-
-
 # batch one, recorded wit a tripod, and a motion detection software
-# right now it only has one video for quick training.
-videofolder = pl.Path("/home/mateo/code/beehaviour/data/batch_001") # old video source
-videofolder = pl.Path("/home/mateo/motion/pilot_videos") # new video source
-config_path = "/home/mateo/code/beehaviour/data/beehaviour-Mateo-2023-09-14/config.yaml"
+# videofolder = pl.Path("/home/mateo/motion/pilot_videos") # new video source
+# config_path = "/home/mateo/code/beehaviour/data/beehaviour-Mateo-2023-09-14/config.yaml"
 
-# / home / mateo / code / beehaviour / data / batch_001 / 0 - 12 - 20230913123759.mp4:
-# crop: 0, 1280, 0, 800
 
-videos = [str(pp) for pp in videofolder.iterdir()]
+# batch two. First recording with the first generation of puzze flowers
+# broken, pointing to a no longer existing folder with left_bend_01. (short)
+# videofolder = pl.Path("/home/mateo/motion/curated_videos_plus")
+# config_path = "/home/mateo/code/beehaviour/data/bottom_view-Mateo-2024-02-18/config.yaml"
+
+
+# batch three. Second recording with the first generation of puzze flowers
+# left and right zig_02.
+videofolder = pl.Path("/home/mateo/motion/zig_02/curated")
+config_path = "/home/mateo/code/beehaviour/data/bottom_view-Mateo-2024-02-20/config.yaml"
+
+
+
+
+
+videos = [str(pp) for pp in videofolder.glob("*.mp4")]
 
 # create project, annotated out since it's done, and I don't want to repeat it
-# config_path = dlc.create_new_project('beehaviour', 'Mateo',
-#                        videos, working_directory='/home/mateo/code/beehaviour/data',
-#                        copy_videos=False, multianimal=False)
+config_path = dlc.create_new_project('bottom_view_DLC', 'Mateo',
+                       videos, working_directory='/home/mateo/code/beehaviour/data',
+                       copy_videos=False, multianimal=False)
 
-dlc.add_new_videos(
-    config_path, videos, copy_videos=False
-)
+
+# todo smarte new viedeo adition. What videos are already in the destination
+# folder?
+# dlc.add_new_videos(
+#     config_path, videos, copy_videos=False
+# )
 
 # I figured, the easiest way is to make it automatic and then remove extra useless frames
-# dlc.extract_frames(config_path, mode='automatic', algo='kmeans', userfeedback=True, crop=False)
-dlc.extract_frames(config_path, mode='manual')
+dlc.extract_frames(config_path, mode='automatic', algo='kmeans', userfeedback=False, crop=False)
+# dlc.extract_frames(config_path, mode='manual')
 
 # launches gui to add labels
 dlc.label_frames(config_path)
@@ -52,7 +61,7 @@ dlc.train_network(config_path, maxiters=500000, gputouse=0)
 
 
 # todo set a sensible output path since this is the data that goes to VAME
-output_path = pl.Path("/home/mateo/code/beehaviour/data/batch_001")
+output_path = pl.Path("/home/mateo/code/beehaviour/data/bottom_view_inference")
 
 dlc.analyze_videos(
     config_path,

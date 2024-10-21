@@ -7,6 +7,7 @@ conda install -c conda-forge tensorflow-gpu
 ```
 
 2. deeplabcut says it depends on pyside, yet it installed pyqt last time, which was giving out errors.
+furthermore, this might not be a necesary step as pyside is an alterlative to qtpy, installed below
 
 ```shell
 conda install -c conda-forge pyside

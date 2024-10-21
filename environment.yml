@@ -1,0 +1,34 @@
+name: beehavior
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.10
+  - ipython
+  - jupyter
+  - nb_conda
+  - notebook<7.0.0
+  - ffmpeg
+  - pytables==3.8.0
+  - scipy
+  - numpy
+  - matplotlib
+  - plotly
+  - pandas
+  - ruamel.yaml
+  - scikit-learn
+  - pyyaml
+  - torchvision
+  - nb_conda
+  - tqdm
+  - h5py
+  - pip
+  - pip:
+    - qtpy
+    - "git+https://github.com/DeepLabCut/DeepLabCut.git@pytorch_dlc#egg=deeplabcut[gui]"
+    - pytest-shutil
+    - opencv-python-headless
+    - umap-learn
+    - networkx
+    - hmmlearn

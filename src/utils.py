@@ -7,9 +7,10 @@ from typing import List, Union
 
 
 def get_transition_matrix(
-        series: Union[np.array, List[np.array]],
+        series: Union[np.ndarray, List[np.ndarray]],
         states: Union[None, List[str]] = None,
-        keep_diagonal: bool = True
+        keep_diagonal: bool = True,
+        norm_by_row: bool = True
 ) -> xr.DataArray:
     """
     Stacks the series agains a shifted version of itself generating pairs
@@ -17,13 +18,14 @@ def get_transition_matrix(
     transition array
     Args:
         series:
+        states: list of unique states expected to be observed in the series
         keep_diagonal: if False sets the diagonal of self transitions to zero
-
+        norm_by_row: normalizes by rows so the sum == 1, i.e. transition probability
     Returns:
 
     """
     # single array to singleton list of arrays for consistent processing
-    if type(series) == np.array:
+    if type(series) == np.ndarray:
         series = [series]
 
     transitions = list()
@@ -45,18 +47,16 @@ def get_transition_matrix(
 
     observed_states = np.sort(np.unique(observed_states)).tolist()
     if states:
-        missing_deffined = set(observed_states).difference(set(states))
-        if missing_deffined:
-            warnings.warn(
-                f"there are {missing_deffined} "
-                f"in observed states not in set states"
+        discrepant = set(observed_states).difference(set(states))
+        if discrepant:
+            msg = (
+                f"states {discrepant} are discrepant beteen "
+                   f"\nobserved {set(observed_states)} and "
+                   f"\ndefined {set(states)}"
             )
-        missing_observed = set(states).difference(set(observed_states))
-        if missing_observed:
-            warnings.warn(
-                f"there are {missing_observed} "
-                f"in set states not in observed states"
-            )
+            print(msg)
+            # warnings.warn(msg)
+
     else:
         states = observed_states
 
@@ -78,9 +78,14 @@ def get_transition_matrix(
 
     # Normalizes by row sum to get the transition probability
     # automatic dimension alignment with xarray magic.
-    trans_arr /= trans_arr.sum(dim="dest")
+    if norm_by_row:
+        trans_arr /= trans_arr.sum(dim="dest")
 
     if np.any(np.isnan(trans_arr)):
-        trans_arr = np.nan_to_num(trans_arr)
+        trans_arr = xr.DataArray(
+            np.nan_to_num(trans_arr),
+            dims = trans_arr.dims,
+            coords = trans_arr.coords
+        )
 
     return trans_arr
